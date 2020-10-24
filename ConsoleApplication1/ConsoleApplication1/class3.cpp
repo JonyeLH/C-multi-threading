@@ -189,8 +189,8 @@ int main() {
 
 
 	A mytobj8(10);
-	thread mytobj6(ref(mytobj8),15);	//不调用拷贝构造，之后不能用detach
-	mytobj6.join();
+	thread mytobj9(ref(mytobj8),15);	//不调用拷贝构造，之后不能用detach
+	mytobj9.join();
 
 
 	return 0;

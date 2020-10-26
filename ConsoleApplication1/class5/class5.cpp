@@ -6,6 +6,11 @@
 using namespace std;
 
 class A {
+private:
+	list<int> msgRecvQueue;//容器，专门用于玩家发送过来的命令
+	mutex my_mutex1;	//创建了一个互斥量（一个互斥量一个锁头）
+	mutex my_mutex2;	//创建了另一个互斥量（一个互斥量一个锁头）
+
 public:
 	//把收到的消息（玩家命令）入到一个队列的线程
 	void inMsgRecvQueue() {
@@ -16,6 +21,7 @@ public:
 				//lock_guard<mutex> myguard2(my_mutex2);
 
 
+				//死锁的发生：线程A先锁mutex1，接着锁mutex2
 				//my_mutex1.lock();	//锁住一次元素的插入，
 				////。。。。。处理数据
 				//my_mutex2.lock();	//实际工程中，这两个锁头不一定是连着的，他们可能需要保护不同的数据共享块
@@ -30,33 +36,41 @@ public:
 
 				msgRecvQueue.push_back(i);//假设数字i就是玩家发送的数据，压入队列中
 
-				//my_mutex2.unlock();	//解锁
+				//my_mutex2.unlock();	//对应的解锁操作
 				//my_mutex1.unlock();	//解锁的时候无所谓先解锁哪个锁
 			}
-
 		}
 		return;
 	}
 
+
+
 	bool outMsgLULProc(int &command) {
 		
-		//lock_guard<mutex> myguard2(my_mutex2);
-		//lock_guard<mutex> myguard1(my_mutex1);	//lock_guard是类模板，所以按照模板的写法声明，把my_mutex作为类模板对象myguard的形参
-		//										//在执行lock_guard的对象函数时就会调用类模板的构造函数mutex::lock()，这个类模板对象是一个局部对象，
-		//										//在局部作用域之后就会调用析构函数mutex::unlock()
-		
+		//lock_guard是类模板，所以按照模板的写法声明，把my_mutex作为类模板对象myguard的形参
+		//在执行lock_guard的对象函数时就会调用类模板的构造函数mutex::lock()，这个类模板对象是一个局部对象，
+		//在局部作用域之后就会调用析构函数mutex::unlock()
 
-		//my_mutex2.lock();	//线程A是inMsgRecvQueue中先锁mutex1，再锁mutex2，死锁的发生是要与之前的线程A上锁顺序相反，先锁mutex2，再锁mutex1
+		// //死锁的发生：线程B先锁mutex2再锁mutex1
+		// //线程A是inMsgRecvQueue中先锁mutex1，再锁mutex2，死锁的发生是要与之前的线程A上锁顺序相反，先锁mutex2，再锁mutex1
+		//lock_guard<mutex> myguard2(my_mutex2);
+		//lock_guard<mutex> myguard1(my_mutex1);																							
+		
+		//my_mutex2.lock();	
 		//my_mutex1.lock();	//加锁，锁住一次数据的取出
 
-
+		
+		//死锁避免方法一：改变上锁顺序使得两个线程上锁的顺序一致
+		//my_mutex1.lock();	
+		//my_mutex2.lock();	
 
 		//死锁避免方法二：使用std::lock()函数
 		std::lock(my_mutex1, my_mutex2);	//使用std::lock()函数进行锁的死锁发生，后面还是要接解锁函数
 		
-		//思索避免方法三：基于方法二上省去unlock
+		//死锁避免方法三：基于方法二上省去unlock
 		lock_guard<mutex> myguard1(my_mutex1, std::adopt_lock);
 		lock_guard<mutex> myguard2(my_mutex2, std::adopt_lock);
+
 
 		if (!msgRecvQueue.empty()) {	   
 			//消息队列不为空
@@ -75,6 +89,7 @@ public:
 		return false;
 	}
 
+
 	//把数据从队列中取出的线程
 	void outMsgQueue() {
 		int command = 0;
@@ -92,11 +107,6 @@ public:
 		}
 		cout << "end" << endl;
 	}
-
-private:
-	list<int> msgRecvQueue;//容器，专门用于玩家发送过来的命令
-	mutex my_mutex1;	//创建了一个互斥量（一个互斥量一个锁头）
-	mutex my_mutex2;	//创建了另一个互斥量（一个互斥量一个锁头）
 };
 
 
@@ -162,9 +172,6 @@ int main() {
 		总结：std::lock()一次锁定多个互斥量，谨慎使用
 
 	*/
-
-
-
 }
 
 

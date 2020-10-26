@@ -6,15 +6,16 @@ using namespace std;
 
 
 class TA {
-
 public:
-
+	// //对应创建线程方法二
 	//void operator() () {	//仿函数   也可以叫做重载() 不带参数
 	//	cout << "我的子线程2开始了" << endl;
 	//	cout << "我的子线程2结束了" << endl;
 	//}
 
 
+
+	 //对应创建线程方法二，使用引用
 	//如果这里传参是引用，使用detach则会出现不可预料的结果。因为这里传进来的引用是主函数（主线程）中的一个局部变量，
 	//在主线程结束时，局部变量内存就会被系统回收，所以在子线程中继续使用这个局部变量的引用就会出现不可预知的结果。
 	//int &m_i;	
@@ -28,9 +29,10 @@ public:
 	//	cout << "TA()析构函数被执行" << endl;
 	//}
 
-	/*
-	所以以下参数中不要使用引用，就不会出现问题，都是之前复制进来的值
-	*/
+
+	///*
+	//所以以下参数中不要使用引用，就不会出现问题，都是之前复制进来的值
+	//*/
 	int m_i;
 	TA(int i) :m_i(i) {
 		cout << "TA()构造函数被执行" << endl;
@@ -53,7 +55,7 @@ public:
 
 
 
-//自己创建的线程从一个函数(初始函数)开始运行:
+//对应创建线程方法一：自己创建的线程从一个函数(初始函数)开始运行
 void myprint() {
 	cout << "我的子线程1开始了" << endl;
 	cout << "我的子线程1结束了" << endl;
@@ -79,7 +81,7 @@ int main() {
 	整个进程时候执行完毕的标志是：主线程是否执行完，如果主线程执行完毕了，就代表着整个进程执行完毕了
 	此时，一般情况，如果还有其他子线程还没有执行完毕，那么这些子线程也会被操作系统强行终止。
 	所以，一般情况下，如果想保持子线程（自己用代码创建的线程）的运行状态，那么要让主线程一直保持，不要让主线程运行结束
-	这个规律有例外!!!
+	这个规律有例外!!!  detach
 
 	包含头文件thread
 	初始函数
@@ -110,27 +112,30 @@ int main() {
 	*/
 
 
-	// // 创建线程方法一：使用thread类创建线程
-	// //myprint()函数是可调用对象
-	//thread mytobj(myprint);	//使用thread类创建了线程mytobi，线程的执行起点（入口）myprint()函数;  myprint线程开始执行	
-	//
-	//if (mytobj.joinable()) {
-	//	cout << "1:joinable()==true" << endl;
-	//}
-	//else {
-	//	cout << "1:joinable()==false" << endl;
-	//}
 
-	////阻塞主线程并等待子线程执行完毕
-	//mytobj.join();			
-	//cout << "主线程结束了" << endl;		
+	 // 创建线程方法一：使用thread类创建线程
+	 // myprint()函数是可调用对象
+	thread mytobj(myprint);	//使用thread类创建了线程mytobi，线程的执行起点（入口）myprint()函数;  myprint线程开始执行	
+	
+	if (mytobj.joinable()) {
+		cout << "1:joinable()==true" << endl;
+	}
+	else {
+		cout << "1:joinable()==false" << endl;
+	}
+	 //阻塞主线程并等待子线程执行完毕
+	mytobj.join();			
+	cout << "主线程结束了" << endl;	
+	cout << endl;
+	cout << endl;
 	/////结果输出//////
 	///*我的线程开始了
 	//  我的线程结束了
 	//  主线程结束了
 	//*/
 
-	//if (mytobj.joinable()) {
+
+	//if(mytobj.joinable()) {
 	//	cout << "2:joinable()==true" << endl;
 	//}
 	//else {
@@ -147,28 +152,30 @@ int main() {
 
 
 
-
-
-	// //创建线程方法二：使用类，对象完成线程创建方法
+	// //创建线程方法二：使用类，对象完成线程创建方法，调用默认构造函数
 	//TA ta;
 	//thread mytobj3(ta);		//ta是可调用对象
 	//mytobj3.join();
 
 	//cout << "主线程结束了" << endl;
-	/////结果输出//////
-	///*我的线程开始了
-	//  我的线程结束了
-	//  主线程结束了
-	//*/
+	///////结果输出//////
+	/////*我的线程开始了
+	////  我的线程结束了
+	////  主线程结束了
+	////*/
 
 
-	//int myi = 6;
-	//TA ta(myi);
-	//thread mytobj3(ta);		//ta是可调用对象
-	////这里的对象实际上是被  复制  到线程中去，所以执行完主线程后，ta会被销毁，但是所复制的TA对象（ta）依旧存在，
-	//mytobj3.join();
-	////mytobj3.detach();
-	//cout << "主线程结束" << endl;
+	// //创建线程方法二：使用类，对象完成线程创建方法，调用带参构造函数
+	int myi = 6;
+	TA ta(myi);
+	thread mytobj3(ta);		//ta是可调用对象
+							//这里的对象实际上是被  复制  到线程中去，所以执行完主线程后，ta会被销毁，但是所复制的TA对象（ta）依旧存在，
+	mytobj3.join();
+	 //mytobj3.detach();
+
+	cout << "主线程结束" << endl;
+	cout << endl;
+	cout << endl;
 	////////输出结果/////////
 	/*
 	TA()构造函数被执行				TA生成ta时调用构造函数
@@ -186,7 +193,7 @@ int main() {
 
 
 
-	//创建线程方法三：lambda表达式
+	 //创建线程方法三：lambda表达式
 	auto mylambda_thread = [] {
 		cout << "我的子线程3开始执行" << endl;
 
@@ -196,6 +203,7 @@ int main() {
 	thread mytobj4(mylambda_thread);
 	mytobj4.join();
 	cout << "主线程结束" << endl;
+
 
 	return 0;
 }

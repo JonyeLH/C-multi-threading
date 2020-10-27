@@ -1,3 +1,14 @@
+/*
+线程传参出现的陷阱
+
+总结
+（a）若是传递int这种简单的类型参数，建议直接使用值传递，不用使用引用，防止节外生枝
+（b）如果传递是类对象，避免隐式转换（就类似陷阱二，又如在（1.1）中将char类型转换成一个strin类型）。
+全部都在创建线程的地方就构造出临时对象，然后再函数参数里，用引用来接；否则会多出调用构造函数
+
+！！！！！！！终极结论：不使用detach(),只使用join()，这样就不存在局部变量失效导致线程对内存的非法引用问题！！！！！！
+
+*/
 #include <iostream>
 #include <vector>
 #include <thread>
@@ -72,42 +83,46 @@ int main() {
 	////////////////////////////////////////////一：传递临时对象作为线程参数////////////////////////////////////////////////////////
 
 	//	//(1.1)要避免的陷阱
-	//int mvar = 1;	//在debug中设定断点  选中变量mvar按  shift+F9  在变量mvar前加上  &  按回车后  用于查看变量mvar地址	0x00e5f9f4 {1}
-	//int &mvary = mvar;		//同理选中变量mvary按  shift+F9  在变量mvary前加上  &   用于查看变量mvary地址	观察发现两个变量地址一致	0x00e5f9f4 {1}
-	//char mybuf[] = "this is a test1";
-	////用函数的形式创建线程，并且给函数传入两个参数 mvar 和 mybuf 分别对应函数的两个形参
-	////thread mytobj1(myprint, mvar, mybuf);	//接着在debug调试进入线程myprint()函数,查看传递进去的引用参数mvar对应i的地址，再查看第二参数mybuf对应的pmybuf地址
-	
-	
+	int mvar = 1;	//在debug中设定断点  选中变量mvar按  shift+F9  在变量mvar前加上  &  按回车后  用于查看变量mvar地址	0x00e5f9f4 {1}
+	int &mvary = mvar;		//同理选中变量mvary按  shift+F9  在变量mvary前加上  &   用于查看变量mvary地址	观察发现两个变量地址一致	0x00e5f9f4 {1}
+	char mybuf[] = "this is a test1";
+	//////用函数的形式创建线程，并且给函数传入两个参数 mvar 和 mybuf 分别对应函数的两个形参
+	//thread mytobj1(myprint, mvar, mybuf);	//接着在debug调试进入线程myprint()函数,查看传递进去的引用参数mvar对应i的地址，再查看第二参数mybuf对应的pmybuf地址
+	//cout << endl;
+	//cout << endl;
+
 	////(1.2)要避免的陷阱		在解决陷阱一时，事实上可能存在，mybuf都被回收了（主线程执行完毕），系统才去把char类型的mybuf转换为string类型传递给子线程
 
 
 	////陷阱二解决方法：
-	//thread mytobj1(myprint, mvar, string(mybuf));	//在这里直接将mybuf转换为string对象，可以保证子线程中用肯定有效的对象
-	//mytobj1.detach();
-	//cout << "主线程结束" << endl;
+	thread mytobj2(myprint, mvar, string(mybuf));	//在这里直接将mybuf转换为string对象，可以保证子线程中用肯定有效的对象
+	mytobj2.detach();
+	cout << "主线程结束" << endl;
+	cout << endl;
+	cout << endl;
 
 
+	//验证陷阱二解决方法
+	int mvar1 = 1;
+	int mysecon2=12;
+	//thread mytobj3(myprint2, mvar1, mysecon2);		//我们希望mysecond2转成A类型对象传递给myprint2函数		但是这里主线程执行完，转换却未执行
+	thread mytobj3(myprint2, mvar1, A(mysecon2));		//使用这种类型转换就可以在主线程退出之前完成类型转换，从而子线程得以安全执行
+													//在创建线程的同时构造临时对象的方法传递参数是可行的
+	mytobj3.detach();
+	cout << "主线程结束" << endl;
+	cout << endl;
+	cout << endl;
+	/*输出打印
+		构造函数开始执行
+		拷贝构造函数执行
+		0051BC50
+		析构函数执行
+		析构函数执行
+		主线程结束	
+	*/
 
-	////验证陷阱二解决方法
-	//int mvar1 = 1;
-	//int mysecon2=12;
-	////thread mytobj2(myprint2, mvar1, mysecon2);		//我们希望mysecond2转成A类型对象传递给myprint2函数		但是这里主线程执行完，转换却未执行
-	//thread mytobj2(myprint2, mvar1, A(mysecon2));		//使用这种类型转换就可以在主线程退出之前完成类型转换，从而子线程得以安全执行
-	//												//在创建线程的同时构造临时对象的方法传递参数是可行的
-	//mytobj2.detach();
-	//cout << "主线程结束" << endl;
-	///*输出打印
-	//	构造函数开始执行
-	//	拷贝构造函数执行
-	//	0051BC50
-	//	析构函数执行
-	//	析构函数执行
-	//	主线程结束	
-	//*/
 
-
-
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	/*
 	(1.3)总结
 	（a）若是传递int这种简单的类型参数，建议直接使用值传递，不用使用引用，防止节外生枝
@@ -124,12 +139,15 @@ int main() {
 
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	////(2.1)线程id：每一个线程实际上都对应一个独自的id，线程id可以使用c++标准库里的函数来获取，std::this_thread::get_id()来获取
-	////(2.2)临时对象捕获
-	//cout << "主线程id是：" << this_thread::get_id() << endl;
-	////int mvar = 1;
-	////thread mytobj3(myprint3, mvar);
-	////mytobj3.join();
+	//(2.1)线程id：每一个线程实际上都对应一个独自的id，线程id可以使用c++标准库里的函数来获取，std::this_thread::get_id()来获取
+	//(2.2)临时对象捕获
+	cout << "主线程id是：" << this_thread::get_id() << endl;
+
+	int mvar2 = 1;
+	thread mytobj4(myprint3, mvar2);
+	mytobj4.join();
+	cout << endl;
+	cout << endl;
 	///*输出打印
 	//主线程id是：20968
 	//构造函数开始执行00CAF764        thread_id=2188				从这可看出是子线程中构造A类对象（pmybuf），还依赖于主线程的参数地址
@@ -137,19 +155,21 @@ int main() {
 	//析构函数执行00CAF764    thread_id=2188
 	//*/
 
-	//int mvar = 1;
-	//thread mytobj3(myprint3, A(mvar));
-	////mytobj3.join();
+	int mvar3 = 1;
+	thread mytobj5(myprint3, A(mvar3));
+	mytobj5.join();
+	cout << endl;
+	cout << endl;
 	///*
 	//主线程id是：20440
 	//构造函数开始执行00B5F954        thread_id=20440				从这可以看出使用了临时对象后，所有的A类对象都在main()函数中就已经构造完毕
 	//拷贝构造函数执行003AF880        thread_id=20440
-	//析构函数执行00B5F954    thread_id=子线程myprint3的参数地址是：003AF880 thread_id=23572
+	//析构函数执行00B5F954    thread_id=子线程myprint3的参数地址是：003AF880 thread_id=23572		//两次的析构分别对应主线程中的构造和拷贝构造
 	//析构函数执行003AF880    20440
 	//thread_id=23572
 	//*/
 
-	//mytobj3.detach();
+	//mytobj5.detach();
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -158,14 +178,18 @@ int main() {
 
 	///////////////////////////////////////////////////传递类对象、智能指针作为线程参数////////////////////////////////////////////////////////////
 
-	//A mytobj(10);	//生成一个类对象	地址：0x0077f968 {m_i=10 }	经过拷贝构造后主线程和子线程拥有的地址是不一致的，在子线程中进行的修改不会影响主线程的内容
-	////thread mytobj4(myprint3, mytobj);	//将类对象mytobj作为线程参数		所以这里mytobj的地址还是原主线程的地址，并未改变
-	////mytobj4.join();
+	A mytobj(10);	//生成一个类对象	地址：0x0077f968 {m_i=10 }	经过拷贝构造后主线程和子线程拥有的地址是不一致的，在子线程中进行的修改不会影响主线程的内容
+	thread mytobj6(myprint3, mytobj);	//将类对象mytobj作为线程参数		所以这里mytobj的地址还是原主线程的地址，并未改变
+	mytobj6.join();
+	cout << endl;
+	cout << endl;
 
-	////在子线程函数中，无论是使用引用接收参数，还是不用引用接收，又或者是使用值接收，编译器都会为参数进行拷贝构造函数进行拷贝，从而导致在子线程中进行的修改不会造成主线程的改变
-	////如果有需求在子线程中修改能够导致主线程原始参数的改变，即把主线程的参数真正引用传递到子线程中，就要使用std::ref()函数,不能用detach()函数
-	//thread mytobj4(myprint3, ref(mytobj));	//这时，mytobj运行之后变成了199，被修改了，如果这里写了ref()函数，那么在A类中的参数m_i就可以不使用mutable，而且在线程函数中可以不使用const关键字
-	//mytobj4.join();
+	//在子线程函数中，无论是使用引用接收参数，还是不用引用接收，又或者是使用值接收，编译器都会为参数进行拷贝构造函数进行拷贝，从而导致在子线程中进行的修改不会造成主线程的改变
+	//如果有需求在子线程中修改能够导致主线程原始参数的改变，即把主线程的参数真正引用传递到子线程中，就要使用std::ref()函数,不能用detach()函数
+	thread mytobj7(myprint3, ref(mytobj));	//这时，mytobj运行之后变成了199，被修改了，如果这里写了ref()函数，那么在A类中的参数m_i就可以不使用mutable，而且在线程函数中可以不使用const关键字
+	mytobj7.join();
+	cout << endl;
+	cout << endl;
 	/*输出打印
 	构造函数开始执行0093F9EC        thread_id=21492			因为是对原始地址进行修改，所以这里也省略了拷贝构造函数的调用
 	子线程myprint3的参数地址是：0093F9EC thread_id=17604
@@ -173,16 +197,22 @@ int main() {
 	*/
 
 
-	////使用智能指针进行线程的传递，但是这里必须使用join()不能使用detach()，因为传给子线程函数的指针指向的主线程的内存，一旦主线执行完毕，那么子线程就是不可预知的错误
-	//unique_ptr<int> myp(new int(100));		
-	//thread mytobj5(myprint4, move(myp));
-	//mytobj5.join();
+	//使用智能指针进行线程的传递，但是这里必须使用join()不能使用detach()，因为传给子线程函数的指针指向的主线程的内存，一旦主线执行完毕，那么子线程就是不可预知的错误
+	unique_ptr<int> myp(new int(100));		
+	thread mytobj8(myprint4, move(myp));
+	mytobj8.join();
+	cout << endl;
+	cout << endl;
+
+
 
 
 	////////////////////////////////////////////////////用成员函数指针做线程函数////////////////////////////////////////////////////////////////
 	A mytobj7(10);
-	thread mytobj6(&A::thread_work, mytobj7, 15);
-	mytobj6.join();
+	thread mytobj9(&A::thread_work, mytobj7, 15);
+	mytobj9.join();
+	cout << endl;
+	cout << endl;
 	/*
 	构造函数开始执行00D4F7B0        thread_id=1700
 	拷贝构造函数执行0125B7F4        thread_id=1700

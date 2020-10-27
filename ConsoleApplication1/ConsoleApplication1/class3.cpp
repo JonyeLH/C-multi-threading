@@ -208,8 +208,8 @@ int main() {
 
 
 	////////////////////////////////////////////////////用成员函数指针做线程函数////////////////////////////////////////////////////////////////
-	A mytobj7(10);
-	thread mytobj9(&A::thread_work, mytobj7, 15);
+	A mytobj12(10);
+	thread mytobj9(&A::thread_work, mytobj12, 15);
 	mytobj9.join();
 	cout << endl;
 	cout << endl;
@@ -222,9 +222,9 @@ int main() {
 	*/
 
 
-	A mytobj8(10);
-	thread mytobj9(ref(mytobj8),15);	//不调用拷贝构造，之后不能用detach
-	mytobj9.join();
+	A mytobj11(10);
+	thread mytobj10(ref(mytobj11),15);	//不调用拷贝构造，之后不能用detach
+	mytobj10.join();
 
 
 	return 0;

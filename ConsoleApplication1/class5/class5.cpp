@@ -74,7 +74,7 @@ public:
 
 		if (!msgRecvQueue.empty()) {	   
 			//消息队列不为空
-			int command = msgRecvQueue.front();//返回第一个元素
+			command = msgRecvQueue.front();//返回第一个元素
 			msgRecvQueue.pop_front();//移除第一个元素，
 
 			//my_mutex1.unlock();	//这里的unlock对应if(true)的解锁，可以想在函数退出之前必须解锁

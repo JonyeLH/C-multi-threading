@@ -1,3 +1,24 @@
+/*	README
+一：unique_lock取代lock_guard
+	unique_lock是一个类模板，比lock_guard更灵活
+
+二：unique_lock可以带的第二参数
+	std::adopt_lock
+	std::try_to_lock
+	std::defer_lock
+
+三：借着defer_lock的话题，引出unique_lock一些重要成员函数
+	lock()
+	try_lock()
+	release()
+
+
+四：unique_lock所有权的传递 mutex
+	方法一：std::move()
+	方法二：std::unique_lock<std::mutex>
+
+*/
+
 #include <iostream>
 #include <vector>
 #include <list>

@@ -1,3 +1,13 @@
+/*	README
+一、创建和等待多个线程
+
+二：数据共享问题分析
+
+三：共享数据的保护案例代码，引入互斥量class5
+*/
+
+
+
 #include <iostream>
 #include <vector>
 #include <list>

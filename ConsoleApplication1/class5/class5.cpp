@@ -1,3 +1,22 @@
+/*	README
+一：互斥量（Mutex）是一个类对象
+	头文件： #include <mutex>
+	互斥量的生成： mutex my_mutex1;
+
+二：互斥量的使用
+	lock() unlock()
+	lock_guard类模板
+
+三：死锁
+	死锁的发生：互斥访问
+
+	死锁的一般解决方法：
+	方法一：上锁顺序不能互斥，要一致
+	方法二：std::lock()函数模板，针对多线程std::lock(my_mutex1, my_mutex2);	必须手动unlock
+	方法三：基于方法二提出添加使用lock_guard()函数，形参中再添加std::adopt_lock，省去unlock操作
+*/
+
+
 #include <iostream>
 #include <vector>
 #include <list>

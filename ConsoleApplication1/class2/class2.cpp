@@ -1,7 +1,12 @@
-/*
+/*	README
 线程的创建：
-	thread类生成线程，通过函数是可调用对象；使用类，对象完成线程创建方法；还可以用lambda表达式实现线程功能
+	thread类生成线程，
+		1、通过函数是可调用对象；
+		2、使用类，对象完成线程创建方法；
+		3、还可以用lambda表达式实现线程功能
 */
+
+
 #include <iostream>
 #include <string>
 #include <vector>
